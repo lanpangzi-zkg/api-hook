@@ -12,6 +12,9 @@ class ApiHook extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
+            mockList: [],
+            mockApiInfo: null,
+            mockContent: EMPTY_CONTENT,
             apiList: [],
             hookMode: FILTER_MODE,
             editApiInfo: null,
@@ -21,6 +24,11 @@ class ApiHook extends React.PureComponent {
         };
         this.containerRef = React.createRef();
         this.onDeleteApi = this.onDeleteApi.bind(this);
+        this.onAddMockApi = this.onAddMockApi.bind(this);
+        this.onSaveAddMock = this.onSaveAddMock.bind(this);
+        this.onCancelAddMock = this.onCancelAddMock.bind(this);
+        this.onAddInptChange = this.onAddInptChange.bind(this);
+        this.onDeleteMockApi = this.onDeleteMockApi.bind(this);
         this.onOriginMessage = this.onOriginMessage.bind(this);
         this.postEditMessage = this.postEditMessage.bind(this);
         this.onToggleVisiable = this.onToggleVisiable.bind(this);
@@ -131,6 +139,7 @@ class ApiHook extends React.PureComponent {
                 editResponse = Object.assign({}, response);
                 return true;
             }
+            return false;
         });
         if (editResponse) {
             try {
@@ -216,11 +225,9 @@ class ApiHook extends React.PureComponent {
         const isFilter = e.target.checked; // 是否拦截接口响应开关
         const { apiList } = this.state;
         const { method, url } = e.target.dataset;
-        let apiInfo;
         const _apiList = apiList.reduce((arr, item) => {
             if (item.method === method && item.url === url) {
                 item.isFilter = isFilter;
-                apiInfo = item;
             }
             arr.push(item);
             return arr;
@@ -234,6 +241,57 @@ class ApiHook extends React.PureComponent {
             apiStatusCode: e.target.value,
         });
     }
+    onMockContentChange(e) {
+        this.setState({
+            mockContent: e.target.value,
+        });
+    }
+    onAddMockApi() {
+        this.setState({
+           mockAdd: true,
+        });
+    }
+    onDeleteMockApi(e) {
+        const { id } = e.target.dataset;
+        const { mockList } = this.state;
+        const _mockList = mockList.filter((item) => {
+            return item.id !== id;
+        });
+        this.setState({
+            mockList: _mockList,
+        });
+    }
+    onAddInptChange(e) {
+        const { key } = e.target.dataset;
+        this.setState({
+            [key]: e.target.value,
+        });
+    }
+    onSaveAddMock() {
+        const { mockaddurl, mockaddcontent } = this.state;
+        if (!mockaddurl || !mockaddcontent) {
+            alert('请输入mock接口的地址和mock结构');
+            return;
+        }
+        const { mockList } = this.state;
+        this.setState({
+            mockAdd: false,
+            mockaddurl: EMPTY_CONTENT,
+            mockaddcontent: EMPTY_CONTENT,
+            mockList: mockList.concat({
+                id: `${Date.now()}`,
+                url: mockaddurl,
+                mock: mockaddcontent,
+            })
+        });
+    }
+    onCancelAddMock() {
+        this.setState({
+            mockurl: '',
+            mockContent: '',
+            mockAdd: false,
+        });
+    }
     isApiEqual(a, b) {
         return String(a) === String(b);
     }
@@ -243,7 +301,7 @@ class ApiHook extends React.PureComponent {
         }
         return res || '';
     }
-    renderEditContent() {
+    renderApiResponse() {
         const { apiContent, editApiInfo } = this.state;
         return (
             <textarea
@@ -253,120 +311,212 @@ class ApiHook extends React.PureComponent {
             />
         );
     }
+    renderFilter() {
+        const { editApiInfo, apiList, apiStatusCode } = this.state;
+        return (
+            <div className="api-hook-main">
+                <div className="api-hook-title">接口请求列表</div>
+                <div className="api-hook-list">
+                    {
+                        apiList.map((item) => {
+                            const { method, url, isEditActive, isEditWaiting, isFilter } = item;
+                            return (
+                                <div
+                                    key={`${method}${url}`}
+                                    className={`api-item ${isEditWaiting ? 'wait-mode' : isEditActive ? 'edit-mode' : 'normal-mode'}`}
+                                    onClick={() => {
+                                        if (isEditWaiting) { // 【等待编辑】模式下，可点击切换成【编辑】模式
+                                            const apiInfo = Object.assign({}, item);
+                                            apiInfo.isEditWaiting = false;
+                                            apiInfo.isEditActive = true;
+                                            this.setState({
+                                                apiList: this.putApiInfo2Top(apiList, apiInfo),
+                                                editApiInfo: apiInfo,
+                                                apiContent: this.formatResponse(apiInfo?.response?.response),
+                                            });
+                                        }
+                                    }}
+                                >
+                                    <span className="api-method">
+                                        {method}
+                                    </span>
+                                    <span className="api-url" title={url}>{url}</span>
+                                    <span
+                                        className="delete-api"
+                                        data-method={method}
+                                        data-url={url}
+                                        disabled={isEditWaiting || isEditActive}
+                                        onClick={this.onDeleteApi}
+                                    >×</span>
+                                    <input
+                                        type="checkbox"
+                                        title="是否拦截"
+                                        data-method={method}
+                                        data-url={url}
+                                        checked={isFilter}
+                                        disabled={isEditWaiting || isEditActive}
+                                        onChange={this.onApiFilterChange} />
+                                </div>
+                            );
+                        })
+                    }
+                </div>
+                <div className="api-hook-content">
+                    <div className="api-hook-title">接口响应内容{editApiInfo ? <span className="edit-url">({editApiInfo.url})</span> : ''}</div>
+                    {
+                        this.renderApiResponse()
+                    }
+                    <div className="api-hook-title">
+                        接口响应状态码
+                        <select
+                            value={apiStatusCode}
+                            disabled={!editApiInfo}
+                            className="status-code-select"
+                            onChange={this.onStatusCodeChange}
+                        >
+                            <option value={200}>200</option>
+                            <option value={302}>302</option>
+                            <option value={400}>400</option>
+                            <option value={401}>401</option>
+                            <option value={403}>403</option>
+                            <option value={404}>404</option>
+                            <option value={500}>500</option>
+                            <option value={503}>503</option>
+                        </select>
+                    </div>
+                    <div className="botttom-bar">
+                        <button
+                            disabled={!editApiInfo}
+                            onClick={this.postEditMessage}
+                        >
+                            确定
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    renderMock() {
+        const { mockList, mockApiInfo, mockAdd } = this.state;
+        return (
+            <div className="api-hook-main">
+                <div
+                    style={{
+                        margin: '15px 0',
+                    }}
+                >
+                    <button
+                        disabled={mockAdd}
+                        className="add-mock-btn"
+                        onClick={this.onAddMockApi}
+                    >
+                        添加mock
+                    </button>
+                </div>
+                {
+                    mockList.map(({ id, url, mock }) => {
+                        return (
+                            <div key={id} className="mock-item">
+                                <span className="mock-url">{url}</span>
+                                <button
+                                    className="mock-edit"
+                                    onClick={() => {
+                                        this.setState({
+                                            mockContent: mock,
+                                        });
+                                    }}
+                                >
+                                    编辑
+                                </button>
+                            </div>
+                        );
+                    })
+                }
+                {
+                    mockApiInfo ?
+                        <textarea
+                            value={mockApiInfo.mock}
+                            onChange={this.onMockContentChange}
+                        ></textarea> : null
+                }
+                {
+                    mockAdd ?
+                    <>
+                        <p>
+                            <label>url:</label>
+                            <input
+                                className="mock-url"
+                                data-key="mockaddurl"
+                                onChange={this.onAddInptChange}
+                            />
+                        </p>
+                        <p>
+                            <label>mock:</label>
+                            <textarea
+                                className="mock-content"
+                                data-key="mockaddcontent"
+                                onChange={this.onAddInptChange}
+                                rows={10}
+                            ></textarea>
+                        </p>
+                        <div className="add-mock-button-bar">
+                            <button onClick={this.onSaveAddMock}>确定</button>
+                            <button onClick={this.onCancelAddMock}>取消</button>
+                        </div>
+                    </> : null
+                }
+            </div>
+        );
+    }
+    renderTabs() {
+        const { hookMode } = this.state;
+        return (
+            <div className="api-hook-tabs">
+                <button
+                    className={hookMode === FILTER_MODE ? 'active' : 'normal'}
+                    onClick={() => {
+                        this.setState({
+                            hookMode: FILTER_MODE,
+                        });
+                    }}
+                >
+                    接口拦截
+                </button>
+                <button
+                    className={hookMode === MOCK_MODE ? 'active' : 'normal'}
+                    onClick={() => {
+                        this.setState({
+                            hookMode: MOCK_MODE,
+                        });
+                    }}
+                >
+                    接口Mock
+                </button>
+            </div>
+        );
+    }
+    renderToggleBar() {
+        const { visiable } = this.state;
+        return (
+            <div className="toggle-bar" onClick={this.onToggleVisiable}>
+                {
+                    visiable ? '>' : '<'
+                }
+            </div>
+        );
+    }
     render() {
-        const { editApiInfo, visiable, apiList, apiStatusCode, hookMode } = this.state;
+        const { visiable, hookMode } = this.state;
         return (
             <div
                 ref={this.containerRef}
                 className={`api-hook-container ${visiable ? 'visiable' : 'non-visiable'}`}
             >
-                <div className="api-hook-tabs">
-                    <button
-                        className={hookMode === FILTER_MODE ? 'active' : 'normal'}
-                        onClick={() => {
-                            this.setState({
-                                hookMode: FILTER_MODE,
-                            });
-                        }}
-                    >
-                        接口拦截
-                    </button>
-                    <button
-                        className={hookMode === MOCK_MODE ? 'active' : 'normal'}
-                        onClick={() => {
-                            this.setState({
-                                hookMode: MOCK_MODE,
-                            });
-                        }}
-                    >
-                        接口Mock
-                    </button>
-                </div>
-                <div className="api-hook-main">
-                    <div className="api-hook-title">接口请求列表</div>
-                    <div className="api-hook-list">
-                        {
-                            apiList.map((item) => {
-                                const { method, url, isEditActive, isEditWaiting, isFilter } = item;
-                                return (
-                                    <div
-                                        key={`${method}${url}`}
-                                        className={`api-item ${isEditWaiting ? 'wait-mode' : isEditActive ? 'edit-mode' : 'normal-mode'}`}
-                                        onClick={() => {
-                                            if (isEditWaiting) { // 【等待编辑】模式下，可点击切换成【编辑】模式
-                                                const apiInfo = Object.assign({}, item);
-                                                apiInfo.isEditWaiting = false;
-                                                apiInfo.isEditActive = true;
-                                                this.setState({
-                                                    apiList: this.putApiInfo2Top(apiList, apiInfo),
-                                                    editApiInfo: apiInfo,
-                                                    apiContent: this.formatResponse(apiInfo?.response?.response),
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        <span className="api-method">
-                                            {method}
-                                        </span>
-                                        <span className="api-url" title={url}>{url}</span>
-                                        <span
-                                            className="delete-api"
-                                            data-method={method}
-                                            data-url={url}
-                                            disabled={isEditWaiting || isEditActive}
-                                            onClick={this.onDeleteApi}
-                                        >×</span>
-                                        <input
-                                            type="checkbox"
-                                            title="是否拦截"
-                                            data-method={method}
-                                            data-url={url}
-                                            checked={isFilter}
-                                            disabled={isEditWaiting || isEditActive}
-                                            onChange={this.onApiFilterChange} />
-                                    </div>
-                                );
-                            })
-                        }
-                    </div>
-                    <div className="api-hook-content">
-                        <div className="api-hook-title">接口响应内容{editApiInfo ? <span className="edit-url">({editApiInfo.url})</span> : ''}</div>
-                        {
-                            this.renderEditContent()
-                        }
-                        <div className="api-hook-title">
-                            接口响应状态码
-                            <select
-                                value={apiStatusCode}
-                                disabled={!editApiInfo}
-                                className="status-code-select"
-                                onChange={this.onStatusCodeChange}
-                            >
-                                <option value={200}>200</option>
-                                <option value={302}>302</option>
-                                <option value={400}>400</option>
-                                <option value={401}>401</option>
-                                <option value={403}>403</option>
-                                <option value={404}>404</option>
-                                <option value={500}>500</option>
-                                <option value={503}>503</option>
-                            </select>
-                        </div>
-                        <div className="botttom-bar">
-                            <button
-                                disabled={!editApiInfo}
-                                onClick={this.postEditMessage}
-                            >
-                                确定
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div className="toggle-bar" onClick={this.onToggleVisiable}>
-                    {
-                        visiable ? '>' : '<'
-                    }
-                </div>
+                {this.renderTabs()}
+                {
+                    hookMode === FILTER_MODE ? this.renderFilter() : this.renderMock()
+                }
+                {this.renderToggleBar()}
             </div>
         );
     }

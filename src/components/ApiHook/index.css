@@ -13,6 +13,29 @@
     border: 1px solid #ccd3d88c;
     transition: transform 200ms linear;
 }
+.api-hook-container button, .api-hook-container input, .api-hook-container textarea {
+    outline: none;
+}
+.api-hook-container .mock-url, .api-hook-container .mock-content {
+    width: 250px;
+}
+.api-hook-container .mock-item {
+    margin-bottom: 10px;
+    overflow: hidden;
+    padding-top: 5px;
+}
+.api-hook-container .mock-item + .mock-item {
+    border-top: 1px dashed #ffcccc;
+}
+.api-hook-container .mock-item .mock-edit {
+    float: right;
+}
+.api-hook-container label {
+    display: inline-block;
+    width: 50px;
+    text-align: right;
+    margin-right: 5px;
+}
 .api-hook-container .api-hook-tabs {
     text-align: center;
     margin: 20px 0 0;
@@ -23,6 +46,14 @@
     border: 1px solid #00bcd4;
     padding: 5px 10px;
     cursor: pointer;
+}
+.api-hook-container .api-hook-main .add-mock-btn {
+    background: none;
+    color: #00bcd4;
+    border: 1px dashed;
+}
+.api-hook-container .add-mock-btn:hover {
+    color: #03A9F4;
 }
 .api-hook-container .api-hook-tabs button + button {
     border-left: none;
@@ -141,25 +172,30 @@
 .api-hook-container .api-hook-main .api-hook-content textarea {
     width: 100%;
     min-height: 200px;
-    outline: none;
 }
 .api-hook-container .api-hook-main .api-hook-content .botttom-bar {
     text-align: center;
     margin-top: 15px;
 }
-.api-hook-main .api-hook-content .botttom-bar button {
+.api-hook-container .api-hook-main button {
     color: #fff;
     background-color: #00bcd4;
     border: none;
-    outline: none;
     border-radius: 4px;
     padding: 5px 12px;
     cursor: pointer;
 }
-.api-hook-main .api-hook-content .botttom-bar button:hover {
+.api-hook-container .api-hook-main .add-mock-button-bar {
+    margin-top: 15px;
+    text-align: center;
+}
+.api-hook-container .api-hook-main .add-mock-button-bar button + button {
+    margin-left: 10px;
+}
+.api-hook-main button:hover {
     background-color: #05a2b7;
 }
-.api-hook-main .api-hook-content .botttom-bar button:disabled {
+.api-hook-main button:disabled {
     background-color: #d2d9da;
 }
 .api-hook-container.visiable {
