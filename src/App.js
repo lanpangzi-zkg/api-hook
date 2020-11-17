@@ -1,11 +1,14 @@
-import Menu from './components/Menu';
+import TestApi from './components/TestApi';
 import ApiHook from './components/ApiHook';
 
 function App() {
     return (
 		<div className="App">
-			<Menu />
-			<ApiHook defaultVisiable />
+			<TestApi />
+			<ApiHook
+				defaultVisiable
+				autoFilter
+			/>
 		</div>
     );
 }
