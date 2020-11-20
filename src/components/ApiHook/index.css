@@ -196,7 +196,14 @@
     cursor: pointer;
 }
 .api-hook-container .api-hook-main .api-hook-list .api-item.wait-mode:before {
-    background: #d690a829;
+    /* background: #d690a829; */
+    background-image: repeating-linear-gradient(90deg, #00bcd4, #00bcd4 2px, transparent 0, transparent 4px);
+    background-size: 10px 3px;
+    background-repeat: no-repeat;
+    background-position-x: 5px;
+    background-position-y: bottom;
+    animation: dotMove 2000ms ease-in-out infinite;
+    background-color: #00bcd41c;
 }
 .api-hook-container .api-hook-main .api-hook-list .api-method {
     background: #00BCD4;
@@ -296,6 +303,14 @@
     }
     100% {
         background-position-x: 366px;
+    }
+}
+@keyframes dotMove {
+    0% {
+        background-position-x: 5px;
+    }
+    100% {
+        background-position-x: 415px;
     }
 }
 @keyframes jump {
