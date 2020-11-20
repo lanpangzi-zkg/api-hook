@@ -27,12 +27,72 @@
 .api-hook-container .mock-item + .mock-item {
     border-top: 1px dashed #ffcccc;
 }
-.api-hook-container .mock-item .mock-edit {
+.api-hook-container .api-hook-main .mock-item .delete-btn {
+    top: 3px;
+}
+.api-hook-container .mock-item .edit-btn {
+    position: relative;
+    float: right;
+    top: 4px;
+    line-height: 14px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+.api-hook-container .mock-item .edit-btn[disabled] {
+    cursor: not-allowed;
+}
+.api-hook-container .mock-item .edit-btn:before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    padding: 1px;
+    vertical-align: bottom;
+    background: linear-gradient(0deg, #fff, #fff), 
+        linear-gradient(-135deg, #ffffff, #ffffff 10px, transparent 0) top right/5px 5px,
+        linear-gradient(0, #4a3e3e, #4a3e3e);
+    background-origin: border-box;
+    background-clip: content-box, padding-box, padding-box;
+    background-repeat: no-repeat;
+}
+.api-hook-container .mock-item .edit-btn:hover:before {
+    background: linear-gradient(0deg, #fff, #fff), 
+        linear-gradient(-135deg, #ffffff, #ffffff 10px, transparent 0) top right/5px 5px,
+        linear-gradient(0, #0075ff, #0075ff);
+    background-origin: border-box;
+    background-clip: content-box, padding-box, padding-box;
+    background-repeat: no-repeat;
+}
+.api-hook-container .mock-item .edit-btn:after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 1px;
+    background: #4a3e3e;
+    transform: rotateZ(135deg);
+    left: 4px;
+    top: 5px;
+}
+.api-hook-container .mock-item .edit-btn:hover:after {
+    background: #0075ff;
+}
+.api-hook-container .mock-item .edit-btn[disabled]:after {
+    background: #eee;
+}
+.api-hook-container .mock-item .edit-btn[disabled]:before{
+    background: linear-gradient(0deg, #fff, #fff), 
+        linear-gradient(-135deg, #ffffff, #ffffff 10px, transparent 0) top right/5px 5px,
+        linear-gradient(0, #eee, #eee);
+    background-origin: border-box;
+    background-clip: content-box, padding-box, padding-box;
+    background-repeat: no-repeat;
+}
+.api-hook-container .mock-item  .delete-btn {
     float: right;
 }
 .api-hook-container label {
     display: inline-block;
-    width: 50px;
+    width: 70px;
     text-align: right;
     margin-right: 5px;
 }
@@ -55,6 +115,9 @@
 .api-hook-container .add-mock-btn:hover {
     color: #03A9F4;
 }
+.api-hook-container .api-hook-main .add-mock-btn[disabled] {
+    color: #eee;
+}
 .api-hook-container .api-hook-tabs button + button {
     border-left: none;
 }
@@ -64,6 +127,7 @@
 }
 .api-hook-container .api-hook-main {
     padding: 10px 18px;
+    min-height: 485px;
 }
 .api-hook-container .status-code-select {
     margin-left: 15px;
@@ -153,7 +217,7 @@
     text-overflow: ellipsis;
     vertical-align: middle;
 }
-.api-hook-container .api-hook-main .api-hook-list .delete-api {
+.api-hook-container .api-hook-main .delete-btn {
     float: right;
     line-height: 14px;
     text-align: center;
@@ -162,13 +226,14 @@
     position: relative;
     cursor: pointer;
 }
-.api-hook-container .api-hook-main .api-hook-list .delete-api:hover {
+.api-hook-container .api-hook-main .delete-btn:hover {
     color: #0075ff;
 }
-.api-hook-container .api-hook-main .api-hook-list .delete-api[disabled] {
+.api-hook-container .api-hook-main .delete-btn[disabled] {
     color: #eee;
     cursor: not-allowed;
 }
+
 .api-hook-container .api-hook-main .api-hook-content textarea {
     width: 100%;
     min-height: 200px;

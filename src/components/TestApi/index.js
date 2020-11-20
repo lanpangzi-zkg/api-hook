@@ -14,18 +14,21 @@ class TestApi extends React.PureComponent {
         this.fetchAllApi = this.fetchAllApi.bind(this);
     }
     fetchList() {
+        this.setState({
+            listStatus: '',
+            list: [],
+        });
         var request = new XMLHttpRequest();
-        request.open('GET', 'http://127.0.0.1:4000/list');
+        request.open('GET', 'http://127.0.0.1:4000/list', true);
         request.responseType = 'json';
         request.onload = () => {
             if (request.status === 200) {
-                console.log(request.response);
+                let result = request.response;
+                if (request.responseType === 'json' && typeof result === 'string') {
+                    result = JSON.parse(result);
+                }
                 this.setState({
-                    list: request.response.data || [],
-                });
-            } else {
-                this.setState({
-                    list: [],
+                    list: result.data || [],
                 });
             }
             this.setState({
@@ -35,17 +38,17 @@ class TestApi extends React.PureComponent {
         request.send();
     }
     fetchInfo() {
+        this.setState({
+            infoStatus: '',
+            info: null,
+        });
         var request = new XMLHttpRequest();
-        request.open('POST', 'http://127.0.0.1:4000/info');
+        request.open('POST', 'http://127.0.0.1:4000/info', true);
         request.responseType = 'json';
         request.onload = () => {
             if (request.status === 200) {
                 this.setState({
                     info: request.response.data || {},
-                });
-            } else {
-                this.setState({
-                    info: null,
                 });
             }
             this.setState({

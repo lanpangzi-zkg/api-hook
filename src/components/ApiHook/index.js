@@ -1,10 +1,34 @@
 import React from 'react';
-import ajaxProxy from './AjaxProxy';
-import './index.css';
+import Mock from 'mockjs';
+import { proxy, unProxy } from "ajax-hook";
 import messageCenter from './MessageCenter';
+import './index.css';
+
+function ajaxProxy() {
+    const _proxy = proxy({
+        onRequest: (config, handler) => {
+            handler.next(config);
+        },
+        onError: (err, handler) => {
+            handler.next(err);
+        },
+        onResponse: (response, handler) => {
+            messageCenter.postOriginMessage({
+                response,
+                handler,
+            });
+        }
+    });
+    messageCenter.observe(_proxy);
+    _proxy.onEditMessage = ({ response, handler }) => {
+        handler.next(response);
+    };
+}
 
 ajaxProxy();
+
 const EMPTY_CONTENT = '';
+const EMPTY_OBJECT = {};
 const FILTER_MODE = 'filter';
 const MOCK_MODE ='mock';
 
@@ -13,8 +37,7 @@ class ApiHook extends React.PureComponent {
         super(props);
         this.state = {
             mockList: [],
-            mockApiInfo: null,
-            mockContent: EMPTY_CONTENT,
+            editMockApiInfo: null,
             apiList: [],
             hookMode: FILTER_MODE,
             editApiInfo: null,
@@ -25,16 +48,22 @@ class ApiHook extends React.PureComponent {
         this.containerRef = React.createRef();
         this.onDeleteApi = this.onDeleteApi.bind(this);
         this.onAddMockApi = this.onAddMockApi.bind(this);
-        this.onSaveAddMock = this.onSaveAddMock.bind(this);
-        this.onCancelAddMock = this.onCancelAddMock.bind(this);
-        this.onAddInptChange = this.onAddInptChange.bind(this);
-        this.onDeleteMockApi = this.onDeleteMockApi.bind(this);
+        this.onSaveMock = this.onSaveMock.bind(this);
+        this.onCancelMock = this.onCancelMock.bind(this);
+        this.onDeleteMock = this.onDeleteMock.bind(this);
+        this.onMockInptChange = this.onMockInptChange.bind(this);
         this.onOriginMessage = this.onOriginMessage.bind(this);
         this.postEditMessage = this.postEditMessage.bind(this);
         this.onToggleVisiable = this.onToggleVisiable.bind(this);
         this.onApiFilterChange = this.onApiFilterChange.bind(this);
         this.onApiContentChange = this.onApiContentChange.bind(this);
         this.onStatusCodeChange = this.onStatusCodeChange.bind(this);
+    }
+    componentDidMount() {
+        if (!this.isApiHookWork()) {
+            unProxy();
+        }
+        messageCenter.observe(this);
     }
     createApiKey(method, url) {
         return {
@@ -53,9 +82,9 @@ class ApiHook extends React.PureComponent {
      * @desc 接收api的原始数据
      */
     onOriginMessage(data) {
-        let { visiable, apiList, editApiInfo } = this.state;
+        let { visiable, apiList, editApiInfo, hookMode } = this.state;
         const { handler, response } = data;
-        if (!visiable) { // 不可见时直接返回
+        if (!visiable || hookMode === MOCK_MODE) { // 不可见或者mock模式时直接返回
             messageCenter.postEditMessage({
                 response,
                 handler,
@@ -182,9 +211,6 @@ class ApiHook extends React.PureComponent {
             }
         }
     }
-    componentDidMount() {
-        messageCenter.observe(this);
-    }
     onToggleVisiable() {
         const { visiable, editApiInfo } = this.state;
         if (editApiInfo) {
@@ -199,14 +225,34 @@ class ApiHook extends React.PureComponent {
             apiContent: e.target.value,
         });
     }
+    onDeleteMock(e) {
+        const { id } = e.target.dataset;
+        if (e.target.hasAttribute('disabled')) {
+            return;
+        }
+        if (id) {
+            const { mockList } = this.state;
+            const _mockList = mockList.reduce((arr, item) => {
+                if (item.id !== id) {
+                    arr.push(item);
+                } else {
+                    delete Mock._mocked[item.url];
+                }
+                return arr;
+            }, []);
+            this.setState({
+                mockList: _mockList,
+            });
+        }
+    }
     onDeleteApi(e) {
         e.stopPropagation();
         const { method, url } = e.target.dataset;
         if (e.target.hasAttribute('disabled')) {
             return;
         }
-        const { apiList } = this.state;
         if (method && url) {
+            const { apiList } = this.state;
             const _apiList = apiList.reduce((arr, item) => {
                 if (item.method !== method || item.url !== url) {
                     arr.push(item);
@@ -251,46 +297,66 @@ class ApiHook extends React.PureComponent {
            mockAdd: true,
         });
     }
-    onDeleteMockApi(e) {
-        const { id } = e.target.dataset;
-        const { mockList } = this.state;
-        const _mockList = mockList.filter((item) => {
-            return item.id !== id;
-        });
-        this.setState({
-            mockList: _mockList,
-        });
-    }
-    onAddInptChange(e) {
+    onMockInptChange(e) {
         const { key } = e.target.dataset;
         this.setState({
             [key]: e.target.value,
         });
     }
-    onSaveAddMock() {
-        const { mockaddurl, mockaddcontent } = this.state;
-        if (!mockaddurl || !mockaddcontent) {
+    onSaveMock() {
+        const { mockurl, mocktemplate, editMockApiInfo } = this.state;
+        if (!mockurl || !mocktemplate) {
             alert('请输入mock接口的地址和mock结构');
             return;
         }
-        const { mockList } = this.state;
+        let template;
+        try {
+            template = JSON.parse(mocktemplate);
+            let { mockList } = this.state;
+            this.resetMockState();
+            if (editMockApiInfo) { // 编辑
+                mockList = mockList.reduce((arr, item) => {
+                    if (item.id === editMockApiInfo.id) {
+                        item.url = mockurl;
+                        item.template = template;
+                        item.templateStr = mocktemplate;
+                    }
+                    arr.push(item);
+                    return arr;
+                }, []);
+            } else {
+                mockList = mockList.concat({
+                    id: `${Date.now()}`,
+                    url: mockurl,
+                    template,
+                    templateStr: mocktemplate,
+                });
+            }
+            this.setState({
+                mockList,
+            });
+            Mock.mock(mockurl, template);
+        } catch(e) {
+            alert(`JSON解析异常:${e.message}`);
+        }
+    }
+    onCancelMock() {
+        this.resetMockState();
+    }
+    resetMockState() {
         this.setState({
+            mockurl: EMPTY_CONTENT,
+            mocktemplate: EMPTY_CONTENT,
+            editMockApiInfo: null,
             mockAdd: false,
-            mockaddurl: EMPTY_CONTENT,
-            mockaddcontent: EMPTY_CONTENT,
-            mockList: mockList.concat({
-                id: `${Date.now()}`,
-                url: mockaddurl,
-                mock: mockaddcontent,
-            })
         });
     }
-    onCancelAddMock() {
-        this.setState({
-            mockurl: '',
-            mockContent: '',
-            mockAdd: false,
-        });
+    isApiHookWork() {
+        const { allowOrigins } = this.props;
+        if (Array.isArray(allowOrigins)) {
+            return allowOrigins.includes(window.location.origin);
+        }
+        return true;
     }
     isApiEqual(a, b) {
         return String(a) === String(b);
@@ -300,6 +366,19 @@ class ApiHook extends React.PureComponent {
             return JSON.stringify(res, null, 4);
         }
         return res || '';
+    }
+    registerMock() {
+        unProxy();
+        const { mockList } = this.state;
+        mockList.forEach(({ url, template }) => {
+            Mock.mock(url, template);
+        });
+    }
+    unRegisterMock() {
+        if (window._XMLHttpRequest) {
+            window.XMLHttpRequest = window._XMLHttpRequest;
+        }
+        ajaxProxy();
     }
     renderApiResponse() {
         const { apiContent, editApiInfo } = this.state;
@@ -342,7 +421,7 @@ class ApiHook extends React.PureComponent {
                                     </span>
                                     <span className="api-url" title={url}>{url}</span>
                                     <span
-                                        className="delete-api"
+                                        className="delete-btn"
                                         data-method={method}
                                         data-url={url}
                                         disabled={isEditWaiting || isEditActive}
@@ -397,7 +476,8 @@ class ApiHook extends React.PureComponent {
         );
     }
     renderMock() {
-        const { mockList, mockApiInfo, mockAdd } = this.state;
+        const { mockList, editMockApiInfo, mockAdd, mockurl = '', mocktemplate = '' } = this.state;
+        const btnDisabled = mockAdd || editMockApiInfo;
         return (
             <div className="api-hook-main">
                 <div
@@ -406,62 +486,69 @@ class ApiHook extends React.PureComponent {
                     }}
                 >
                     <button
-                        disabled={mockAdd}
+                        disabled={btnDisabled}
                         className="add-mock-btn"
                         onClick={this.onAddMockApi}
                     >
                         添加mock
                     </button>
                 </div>
+                <div className="mock-list">
+                    {
+                        mockList.map((mockItem) => {
+                            const { id, url } = mockItem;
+                            return (
+                                <div key={id} className="mock-item">
+                                    <span className="mock-url">{url}</span>
+                                    {/* <span
+                                        className="delete-btn"
+                                        data-id={id}
+                                        disabled={btnDisabled}
+                                        onClick={this.onDeleteMock}
+                                    >×</span> */}
+                                    <span
+                                        className="edit-btn"
+                                        disabled={btnDisabled}
+                                        onClick={() => {
+                                            this.setState({
+                                                editMockApiInfo: mockItem,
+                                                mockurl: mockItem.url,
+                                                mocktemplate: mockItem.templateStr,
+                                            });
+                                        }}
+                                    >
+                                    </span>
+                                </div>
+                            );
+                        })
+                    }
+                </div>
                 {
-                    mockList.map(({ id, url, mock }) => {
-                        return (
-                            <div key={id} className="mock-item">
-                                <span className="mock-url">{url}</span>
-                                <button
-                                    className="mock-edit"
-                                    onClick={() => {
-                                        this.setState({
-                                            mockContent: mock,
-                                        });
-                                    }}
-                                >
-                                    编辑
-                                </button>
-                            </div>
-                        );
-                    })
-                }
-                {
-                    mockApiInfo ?
-                        <textarea
-                            value={mockApiInfo.mock}
-                            onChange={this.onMockContentChange}
-                        ></textarea> : null
-                }
-                {
-                    mockAdd ?
+                    mockAdd || editMockApiInfo ?
                     <>
                         <p>
                             <label>url:</label>
                             <input
+                                type="text"
                                 className="mock-url"
-                                data-key="mockaddurl"
-                                onChange={this.onAddInptChange}
+                                data-key="mockurl"
+                                onChange={this.onMockInptChange}
+                                value={mockurl}
                             />
                         </p>
                         <p>
-                            <label>mock:</label>
+                            <label>template:</label>
                             <textarea
                                 className="mock-content"
-                                data-key="mockaddcontent"
-                                onChange={this.onAddInptChange}
+                                data-key="mocktemplate"
+                                onChange={this.onMockInptChange}
+                                value={mocktemplate}
                                 rows={10}
                             ></textarea>
                         </p>
                         <div className="add-mock-button-bar">
-                            <button onClick={this.onSaveAddMock}>确定</button>
-                            <button onClick={this.onCancelAddMock}>取消</button>
+                            <button onClick={this.onSaveMock}>确定</button>
+                            <button onClick={this.onCancelMock}>取消</button>
                         </div>
                     </> : null
                 }
@@ -478,6 +565,7 @@ class ApiHook extends React.PureComponent {
                         this.setState({
                             hookMode: FILTER_MODE,
                         });
+                        this.unRegisterMock();
                     }}
                 >
                     接口拦截
@@ -488,6 +576,7 @@ class ApiHook extends React.PureComponent {
                         this.setState({
                             hookMode: MOCK_MODE,
                         });
+                        this.registerMock();
                     }}
                 >
                     接口Mock
@@ -507,6 +596,9 @@ class ApiHook extends React.PureComponent {
     }
     render() {
         const { visiable, hookMode } = this.state;
+        if (!this.isApiHookWork()) {
+            return null;
+        }
         return (
             <div
                 ref={this.containerRef}
