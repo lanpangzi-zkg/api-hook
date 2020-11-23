@@ -458,12 +458,15 @@ class ApiHook extends React.PureComponent {
                             onChange={this.onStatusCodeChange}
                         >
                             <option value={200}>200</option>
+                            <option value={301}>302</option>
                             <option value={302}>302</option>
                             <option value={400}>400</option>
                             <option value={401}>401</option>
                             <option value={403}>403</option>
                             <option value={404}>404</option>
                             <option value={500}>500</option>
+                            <option value={501}>501</option>
+                            <option value={502}>502</option>
                             <option value={503}>503</option>
                         </select>
                     </div>
@@ -504,12 +507,6 @@ class ApiHook extends React.PureComponent {
                             return (
                                 <div key={id} className="mock-item">
                                     <span className="mock-url">{url}</span>
-                                    {/* <span
-                                        className="delete-btn"
-                                        data-id={id}
-                                        disabled={btnDisabled}
-                                        onClick={this.onDeleteMock}
-                                    >×</span> */}
                                     <span
                                         className="edit-btn"
                                         disabled={btnDisabled}

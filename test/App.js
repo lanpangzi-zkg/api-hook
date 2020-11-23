@@ -1,5 +1,6 @@
-import TestApi from './components/TestApi';
-import ApiHook from './components/ApiHook';
+import React from 'react';
+import ApiHook from '../src/ApiHook';
+import TestApi from './TestApi';
 
 function App() {
     return (
@@ -8,7 +9,7 @@ function App() {
 			<ApiHook
 				autoFilter
 				defaultVisiable
-				allowOrigins={['http://localhost:3000']}
+				allowOrigins={['http://localhost:8080']}
 			/>
 		</div>
     );
