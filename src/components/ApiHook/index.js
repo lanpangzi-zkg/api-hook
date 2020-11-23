@@ -5,6 +5,7 @@ import messageCenter from './MessageCenter';
 import './index.css';
 
 function ajaxProxy() {
+    const XHR_DONE =XMLHttpRequest.DONE;
     const _proxy = proxy({
         onRequest: (config, handler) => {
             handler.next(config);
@@ -19,6 +20,7 @@ function ajaxProxy() {
             });
         }
     });
+    XMLHttpRequest.DONE = XHR_DONE;
     messageCenter.observe(_proxy);
     _proxy.onEditMessage = ({ response, handler }) => {
         handler.next(response);
@@ -28,9 +30,9 @@ function ajaxProxy() {
 ajaxProxy();
 
 const EMPTY_CONTENT = '';
-const EMPTY_OBJECT = {};
 const FILTER_MODE = 'filter';
 const MOCK_MODE ='mock';
+const NO_SUPPORT_TYPE = ['document', 'blob', 'arraybuffer', 'ms-stream'];
 
 class ApiHook extends React.PureComponent {
     constructor(props) {
@@ -62,6 +64,7 @@ class ApiHook extends React.PureComponent {
     componentDidMount() {
         if (!this.isApiHookWork()) {
             unProxy();
+            return;
         }
         messageCenter.observe(this);
     }
@@ -84,7 +87,8 @@ class ApiHook extends React.PureComponent {
     onOriginMessage(data) {
         let { visiable, apiList, editApiInfo, hookMode } = this.state;
         const { handler, response } = data;
-        if (!visiable || hookMode === MOCK_MODE) { // 不可见或者mock模式时直接返回
+        const { responseType } = handler.xhr;
+        if (NO_SUPPORT_TYPE.includes(responseType) || !visiable || hookMode === MOCK_MODE) { // 响应类型不支持/不可见/mock模式时直接返回
             messageCenter.postEditMessage({
                 response,
                 handler,
@@ -102,6 +106,7 @@ class ApiHook extends React.PureComponent {
         }
         if (apiInfo.isFilter) { // 接口拦截
             apiInfo.handler = handler;
+            apiInfo.responseType = responseType;
             apiInfo.response = response;
             apiInfo.isEditActive = editApiInfo ? this.isApiEqual(apiInfo, editApiInfo) : true;
             apiInfo.isEditWaiting = !apiInfo.isEditActive;
@@ -111,7 +116,7 @@ class ApiHook extends React.PureComponent {
             };
             if (apiInfo.isEditActive) {
                 newState.apiStatusCode = response.status;
-                newState.apiContent = this.formatResponse(res);
+                newState.apiContent = this.formatResponse(res, responseType);
             }
             this.setState(newState);
         } else {
@@ -172,8 +177,7 @@ class ApiHook extends React.PureComponent {
         });
         if (editResponse) {
             try {
-                const editContentObj = JSON.parse(apiContent || "{}");
-                editResponse.response = editContentObj;
+                editResponse.response = editApiInfo.responseType === 'json' ? JSON.parse(apiContent || "{}") : apiContent;
                 editResponse.status = apiStatusCode;
                 messageCenter.postEditMessage({
                     response: editResponse,
@@ -195,7 +199,7 @@ class ApiHook extends React.PureComponent {
                         apiList: _apiList,
                         editApiInfo: editWaitApiInfo,
                         apiStatusCode: editWaitApiInfo?.response?.status,
-                        apiContent: this.formatResponse(editWaitApiInfo?.response?.response),
+                        apiContent: this.formatResponse(editWaitApiInfo?.response?.response, editWaitApiInfo?.responseType),
                     });
                 } else {
                     this.setState({
@@ -361,8 +365,8 @@ class ApiHook extends React.PureComponent {
     isApiEqual(a, b) {
         return String(a) === String(b);
     }
-    formatResponse(res = {}) {
-        if (res && typeof res === 'object') {
+    formatResponse(res = {}, responseType = 'text') {
+        if (res && responseType === 'json') {
             return JSON.stringify(res, null, 4);
         }
         return res || '';

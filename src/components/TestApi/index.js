@@ -21,8 +21,8 @@ class TestApi extends React.PureComponent {
         var request = new XMLHttpRequest();
         request.open('GET', 'http://127.0.0.1:4000/list', true);
         request.responseType = 'json';
-        request.onload = () => {
-            if (request.status === 200) {
+        request.onreadystatechange = () => {
+            if(request.readyState === XMLHttpRequest.DONE && request.status === 200) {
                 let result = request.response;
                 if (request.responseType === 'json' && typeof result === 'string') {
                     result = JSON.parse(result);
@@ -45,8 +45,8 @@ class TestApi extends React.PureComponent {
         var request = new XMLHttpRequest();
         request.open('POST', 'http://127.0.0.1:4000/info', true);
         request.responseType = 'json';
-        request.onload = () => {
-            if (request.status === 200) {
+        request.onreadystatechange = () => {
+            if(request.readyState === XMLHttpRequest.DONE && request.status === 200) {
                 this.setState({
                     info: request.response.data || {},
                 });
