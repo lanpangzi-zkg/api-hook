@@ -38,6 +38,7 @@ class ApiHook extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
+            closeApiHook: false,
             mockList: [],
             editMockApiInfo: null,
             apiList: [],
@@ -47,7 +48,8 @@ class ApiHook extends React.PureComponent {
             apiStatusCode: 200,
             visiable: props.defaultVisiable || false,
         };
-        this.containerRef = React.createRef();
+        this.isDragMove = false;
+        this.toggleBarRef = React.createRef();
         this.onDeleteApi = this.onDeleteApi.bind(this);
         this.onAddMockApi = this.onAddMockApi.bind(this);
         this.onSaveMock = this.onSaveMock.bind(this);
@@ -460,6 +462,7 @@ class ApiHook extends React.PureComponent {
                             <option value={200}>200</option>
                             <option value={301}>302</option>
                             <option value={302}>302</option>
+                            <option value={304}>304</option>
                             <option value={400}>400</option>
                             <option value={401}>401</option>
                             <option value={403}>403</option>
@@ -588,7 +591,12 @@ class ApiHook extends React.PureComponent {
     renderToggleBar() {
         const { visiable } = this.state;
         return (
-            <div className="toggle-bar" onClick={this.onToggleVisiable}>
+            <div
+                title="api-hook"
+                className="api-hook-toggle-bar"
+                onClick={this.onToggleVisiable}
+                ref={this.toggleBarRef}
+            >
                 {
                     visiable ? '>' : '<'
                 }
@@ -596,21 +604,29 @@ class ApiHook extends React.PureComponent {
         );
     }
     render() {
-        const { visiable, hookMode } = this.state;
-        if (!this.isApiHookWork()) {
+        const { visiable, hookMode, closeApiHook } = this.state;
+        if (!this.isApiHookWork() || closeApiHook) {
             return null;
         }
         return (
-            <div
-                ref={this.containerRef}
-                className={`api-hook-container ${visiable ? 'visiable' : 'non-visiable'}`}
-            >
-                {this.renderTabs()}
-                {
-                    hookMode === FILTER_MODE ? this.renderFilter() : this.renderMock()
-                }
+            <>
+                <div className={`api-hook-container ${visiable ? 'visiable' : 'non-visiable'}`}>
+                    <div
+                        className="api-hook-close"
+                        title="关闭工具面板"
+                        onClick={() => {
+                            this.setState({
+                                closeApiHook: true,
+                            });
+                        }}
+                    >x</div>
+                    {this.renderTabs()}
+                    {
+                        hookMode === FILTER_MODE ? this.renderFilter() : this.renderMock()
+                    }
+                </div>
                 {this.renderToggleBar()}
-            </div>
+            </>
         );
     }
 }

@@ -1,5 +1,35 @@
 ### api-hook
-api可视化测试工具，提供接口拦截和接口模拟功能，以一种低成本的方式定制个性化数据。
+api可视化测试工具，提供接口拦截和接口模拟功能，以一种低成本的方式定制个性化数据，目前只支持react项目使用，且确保网络请求都是通过ajax发出的。
+
+### 使用说明
+
+ __安装npm包__ 
+npm install api-hook --save-dev
+
+ __组件导入__ 
+在项目入口文件引入组件
+```
+import ApiHook from 'api-hook';
+
+function App() {
+    return (
+        &lt;div className="App"&gt;
+            &lt;Main /&gt;
+            &lt;ApiHook
+                autoFilter
+                defaultVisiable
+                allowOrigins={['http://localhost:3000']}
+            /&gt;
+        &lt;/div&gt;
+    );
+}
+......
+ReactDOM.render(
+  &lt;React.StrictMode&gt;
+    &lt;App /&gt;
+  &lt;/React.StrictMode&gt;,
+  document.getElementById('root')
+);
 
 ### 参数说明
 |属性|说明|默认值|
