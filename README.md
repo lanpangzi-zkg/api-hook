@@ -13,23 +13,24 @@ import ApiHook from 'api-hook';
 
 function App() {
     return (
-        &lt;div className="App"&gt;
-            &lt;Main /&gt;
-            &lt;ApiHook
+        <div className="App">
+            <Main />
+            <ApiHook
                 autoFilter
                 defaultVisiable
                 allowOrigins={['http://localhost:3000']}
-            /&gt;
-        &lt;/div&gt;
+            />
+        </div>
     );
 }
 ......
 ReactDOM.render(
-  &lt;React.StrictMode&gt;
-    &lt;App /&gt;
-  &lt;/React.StrictMode&gt;,
-  document.getElementById('root')
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+    document.getElementById('root')
 );
+```
 
 ### 参数说明
 |属性|说明|默认值|
