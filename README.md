@@ -3,10 +3,12 @@ api可视化测试工具，提供接口拦截和接口模拟功能，以一种�
 
 ### 使用说明
 
- __安装npm包__ 
+ __1.安装npm包__ 
+
 npm install api-hook --save-dev
 
- __组件导入__ 
+ __2.组件导入__ 
+
 在项目入口文件引入组件
 ```
 import ApiHook from 'api-hook';
