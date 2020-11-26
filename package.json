@@ -1,6 +1,6 @@
 {
   "name": "api-hook",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "description": "轻量级接口可视化测试工具，提供接口mock和接口拦截的功能",
   "main": "lib/index.js",
   "files": [

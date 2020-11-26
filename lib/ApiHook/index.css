@@ -20,6 +20,9 @@
     max-height: 500px;
     overflow: auto;
 }
+.api-hook-container .mock-list ~ p {
+    margin: 15px 0;
+}
 .api-hook-container .mock-url, .api-hook-container .mock-content {
     width: 250px;
 }
@@ -298,7 +301,7 @@
     color: #00bcd4;
     cursor: pointer;
     z-index: 99999;
-    opacity: 0.6;
+    opacity: 0.45;
 }
 .api-hook-toggle-bar:hover {
     background: #03A9F4;

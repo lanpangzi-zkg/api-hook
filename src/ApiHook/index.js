@@ -417,7 +417,7 @@ class ApiHook extends React.PureComponent {
                                             this.setState({
                                                 apiList: this.putApiInfo2Top(apiList, apiInfo),
                                                 editApiInfo: apiInfo,
-                                                apiContent: this.formatResponse(apiInfo?.response?.response),
+                                                apiContent: this.formatResponse(apiInfo?.response?.response, apiInfo?.responseType),
                                             });
                                         }
                                     }}
